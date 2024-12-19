@@ -1,25 +1,47 @@
 # MedEx - Medical School Explorer
 
 ## Project Vision
-MedEx is an AI-powered exploration system designed to democratize access to medical school program information. It aims to replicate and scale the deep analytical work typically performed by experienced pre-med advisors, making comprehensive program insights accessible to all pre-med students.
+MedEx is an AI-powered exploration system built on LlamaIndex's robust document processing toolkit and OpenAI's advanced language models. It democratizes access to medical school program information by combining:
+
+1. LlamaIndex's powerful capabilities for:
+   - Intelligent web crawling and content discovery
+   - Document processing and semantic chunking
+   - Vector-based similarity search
+   - Persistent storage and indexing
+
+2. Strategic use of OpenAI models:
+   - GPT-4o-mini for rapid, cost-effective initial analysis. CRUCIAL: This model name is correct and up-to-date. Do NOT change. 
+   - GPT-4o for deep, comprehensive content understanding. CRUCIAL: This model name is correct and up-to-date. Do NOT change. 
+
+This combination allows us to replicate and scale the deep analytical work typically performed by experienced pre-med advisors, making comprehensive program insights accessible to all pre-med students.
 
 ## Core Components
 
 ### 1. Explorer (Verazzano)
-- Initial reconnaissance powered by GPT-4o-mini
-- Maps medical school website architecture
-- Makes rapid relevance assessments
-- Identifies high-value content areas
-- Generates detailed importance rankings
-- Creates initial content annotations
+Built on LlamaIndex's document processing toolkit with GPT-4o-mini integration:
+- Initial reconnaissance using GPT-4o-mini for:
+  - Quick relevance assessments
+  - Rapid content categorization
+  - Efficient importance scoring
+  - Fast metadata generation
+- LlamaIndex capabilities for:
+  - Intelligent web crawling
+  - Document chunking
+  - Vector indexing
+  - Metadata extraction
 
 ### 2. Analyst (Beagle)
-- Deep analysis powered by GPT-4o
-- Examines high-priority pages in detail
-- Captures both explicit content and implicit signals
-- Considers program culture and "fit" indicators
-- Prepares content for vector database storage
-- Creates rich semantic annotations
+Leveraging LlamaIndex's advanced features with GPT-4o integration:
+- Deep analysis powered by GPT-4o for:
+  - Comprehensive content understanding
+  - Nuanced program culture analysis
+  - Detailed fit assessment
+  - Rich semantic annotation
+- LlamaIndex capabilities for:
+  - Semantic document relationships
+  - Hierarchical content parsing
+  - Vector-optimized storage
+  - Advanced metadata management
 
 ## Key Features
 
@@ -82,8 +104,9 @@ MedEx is an AI-powered exploration system designed to democratize access to medi
 
 ### Requirements
 - Python 3.9+
-- OpenAI API key
-- Playwright for web rendering
+- OpenAI API key (for GPT-4o-mini and GPT-4o access)
+- LlamaIndex core and web reader packages
+- Additional LlamaIndex integrations for enhanced functionality
 
 ### Installation
 ```bash
@@ -91,11 +114,8 @@ MedEx is an AI-powered exploration system designed to democratize access to medi
 python -m venv venv
 source venv/bin/activate  # or `venv\Scripts\activate` on Windows
 
-# Install dependencies
+# Install LlamaIndex and other dependencies
 pip install -r requirements.txt
-
-# Install Playwright browsers
-playwright install
 ```
 
 ### Configuration
@@ -112,34 +132,46 @@ python -m medex.cli
 ## Architecture Notes
 
 ### Explorer Design
-- Focuses on efficient discovery and initial assessment
-- Uses rate-limited GPT-4o-mini for quick analysis
-- Maintains exploration state and importance ranking
-- Generates structured page data
+- Built on LlamaIndex's document processing pipeline
+- Uses rate-limited GPT-4o-mini for efficient initial analysis:
+  - Quick content relevance scoring
+  - Rapid metadata generation
+  - Fast importance ranking
+- Leverages LlamaIndex for:
+  - Document crawling and processing
+  - Vector-based content indexing
+  - Persistent state management
 
 ### Beagle Design
-- Performs deep content analysis
-- Captures page rendering and structure
-- Considers visual hierarchy and emphasis
-- Creates vector-ready semantic chunks
-- Preserves advisor-style insights
+- Integrates LlamaIndex's advanced analysis features
+- Employs GPT-4o for comprehensive understanding:
+  - Deep semantic analysis
+  - Nuanced content interpretation
+  - Detailed relationship mapping
+- Utilizes LlamaIndex for:
+  - Hierarchical document parsing
+  - Vector-optimized storage
+  - Rich metadata management
 
 ## Future Development
 
-### Phase 1: Enhanced Content Understanding
-- Improved program culture analysis
-- Better fit indicator detection
-- More nuanced semantic chunking
+### Phase 1: Enhanced LlamaIndex Integration
+- Custom node parsers for medical content
+- Advanced document relationship mapping
+- Optimized GPT-4o-mini prompting patterns
+- Enhanced metadata extraction strategies
 
-### Phase 2: Data Processing
-- Integration with vector database
-- Enhanced metadata generation
-- Structured taxonomy mapping
+### Phase 2: Advanced Processing
+- Custom LlamaIndex extractors for medical terminology
+- GPT-4o-powered semantic analysis improvements
+- Enhanced vector similarity metrics
+- Medical taxonomy integration
 
-### Phase 3: Access Layer
-- Query interface development
-- Semantic search capabilities
-- Pre-med focused retrieval
+### Phase 3: Query Interface
+- LlamaIndex query engine customization
+- GPT-4o response synthesis optimization
+- Domain-specific retrieval strategies
+- Pre-med focused search capabilities
 
 ## Contributing
 This project is part of a larger initiative to improve pre-med advising access. Contributions that align with this mission are welcome.

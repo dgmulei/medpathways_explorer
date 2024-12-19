@@ -1,167 +1,199 @@
-from playwright.sync_api import sync_playwright
-import openai
-from dataclasses import dataclass
-from typing import List, Dict
+from llama_index.core import Settings, Document
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.vector_stores import SimpleVectorStore
+from llama_index.core.storage import StorageContext
+from llama_index.core.indices.vector_store import VectorStoreIndex
+from llama_index.core.callbacks import CallbackManager, LlamaDebugHandler
+from llama_index.llms.openai import OpenAI
+from llama_index.readers.web import SimpleWebPageReader
+from typing import List, Dict, Optional
 import json
 import os
+import hashlib
+import time
 from datetime import datetime
-from bs4 import BeautifulSoup
 from .utils import setup_logging
-
-@dataclass
-class PageView:
-    url: str
-    html: str
-    text_content: str
-    structure: Dict
-    visual_elements: List[Dict]
 
 class Beagle:
     def __init__(self, school: str, importance_ranking_path: str):
         self.school = school
+        
+        # Setup LlamaIndex components
+        self.llama_debug = LlamaDebugHandler()
+        callback_manager = CallbackManager([self.llama_debug])
+        
+        # Use GPT-4o for deeper analysis
+        Settings.llm = OpenAI(
+            model="gpt-4o",
+            temperature=0,
+            api_version="2024-02"
+        )
+        Settings.callback_manager = callback_manager
+        
+        # Initialize node parser
+        self.node_parser = SentenceSplitter(chunk_size=1024, chunk_overlap=20)
+        
+        # Initialize web page reader
+        self.reader = SimpleWebPageReader()
+        
+        # Load pages to analyze
         with open(importance_ranking_path) as f:
-            self.pages_to_analyze = json.load(f)
+            data = json.load(f)
+            self.pages_to_analyze = data.get('ranking', [])
+            
         self.logger = setup_logging(school, "beagle")
         os.makedirs(f"{school}/analysis", exist_ok=True)
 
-    def capture_page(self, url: str) -> PageView:
-        with sync_playwright() as p:
-            browser = p.chromium.launch()
-            page = browser.new_page()
-            page.goto(url, wait_until='networkidle')
-            
-            structure = page.evaluate("""() => {
-                function getNodeStructure(node) {
-                    const rect = node.getBoundingClientRect();
-                    return {
-                        tag: node.tagName,
-                        classes: Array.from(node.classList),
-                        position: {
-                            top: rect.top,
-                            left: rect.left,
-                            width: rect.width,
-                            height: rect.height
-                        },
-                        children: Array.from(node.children).map(getNodeStructure)
-                    };
-                }
-                return getNodeStructure(document.body);
-            }""")
-            
-            visual_elements = page.evaluate("""() => {
-                return Array.from(document.querySelectorAll('table, img, .chart, [role="img"]'))
-                    .map(el => ({
-                        type: el.tagName.toLowerCase(),
-                        position: el.getBoundingClientRect(),
-                        content: el.tagName === 'TABLE' ? el.innerText : null,
-                        alt: el.alt || null
-                    }));
-            }""")
-            
-            html = page.content()
-            text_content = page.evaluate('() => document.body.innerText')
-            browser.close()
-            
-            return PageView(
-                url=url,
-                html=html,
-                text_content=text_content,
-                structure=structure,
-                visual_elements=visual_elements
-            )
-
-    def analyze_page(self, page_view: PageView) -> Dict:
-        base_prompt = """You are a top pre-med advisor analyzing {school}'s medical school webpage.
-        Consider both content and presentation.
-        
-        Return structured JSON:
-        {
-            "sections": [
-                {
-                    "text": "verbatim content",
-                    "type": "category tag",
-                    "context": "where/how presented",
-                    "advisor_notes": "insights on significance/implications"
-                }
-            ],
-            "program_personality": {
-                "tone": "how content is presented",
-                "emphasis": "what's highlighted/prioritized",
-                "distinctive": "unique elements noted"
-            },
-            "fit_indicators": [
-                "specific elements that help assess student fit"
-            ]
-        }"""
-
-        messages = [
-            {"role": "system", "content": base_prompt.format(school=self.school)},
-            {"role": "user", "content": json.dumps({
-                "url": page_view.url,
-                "content": page_view.text_content,
-                "layout": {
-                    "structure": page_view.structure,
-                    "visual_elements": page_view.visual_elements
-                }
-            })}
-        ]
-
+    def capture_page(self, url: str) -> Optional[Document]:
         try:
-            response = openai.chat.completions.create(
-                model="gpt-4o",
-                messages=messages,
-                temperature=0
+            # Use LlamaIndex's web page reader
+            documents = self.reader.load_data([url])
+            
+            if not documents:
+                return None
+                
+            # Process document with HTML parser
+            nodes = self.node_parser.get_nodes_from_documents(documents)
+            
+            # Create temporary index for this page
+            storage_context = StorageContext.from_defaults()
+            index = VectorStoreIndex(
+                nodes,
+                storage_context=storage_context,
+                verbose=True
             )
-            return json.loads(response.choices[0].message.content)
+            
+            return documents[0]
+            
+        except Exception as e:
+            self.logger.error(f"Failed to capture {url}: {str(e)}")
+            return None
+
+    def analyze_page(self, document: Document) -> Optional[Dict]:
+        try:
+            # Use LlamaIndex's query engine for content analysis
+            query_engine = VectorStoreIndex([document]).as_query_engine(
+                verbose=True
+            )
+            
+            # Create analysis prompt
+            prompt = f"""You are analyzing {self.school}'s medical school webpage.
+            Consider both content and presentation to provide insights for pre-med students.
+            
+            You must respond with a valid JSON object using this exact structure, with no additional text or explanation:
+            {{
+                "sections": [
+                    {{
+                        "text": "exact content from page",
+                        "type": "content category",
+                        "context": "presentation details",
+                        "advisor_notes": "insights for students"
+                    }}
+                ],
+                "program_personality": {{
+                    "tone": "content style",
+                    "emphasis": "key priorities",
+                    "distinctive": "unique features"
+                }},
+                "fit_indicators": [
+                    "student fit factors"
+                ]
+            }}
+
+            Content to analyze:
+            {document.text[:2000]}
+            """
+            
+            # Use query engine for analysis
+            response = query_engine.query(prompt)
+            response_text = str(response)
+            
+            try:
+                # Log the response for debugging
+                self.logger.info(f"Raw response: {response_text[:200]}...")
+                
+                # Clean up the response text
+                if response_text.strip():
+                    # Remove markdown code blocks if present
+                    if "```" in response_text:
+                        # Split by ``` and take the content between the markers
+                        parts = response_text.split("```")
+                        if len(parts) >= 2:
+                            response_text = parts[1]
+                            # Remove "json" if it's at the start
+                            if response_text.startswith("json"):
+                                response_text = response_text[4:]
+                            # Remove any trailing ```
+                            response_text = response_text.split("```")[0]
+                    
+                    # Try to parse as JSON
+                    return json.loads(response_text.strip())
+                else:
+                    self.logger.error("Empty response received")
+                    return None
+            except json.JSONDecodeError as e:
+                self.logger.error(f"Failed to parse JSON response: {str(e)}")
+                self.logger.error(f"Response text: {response_text[:200]}...")
+                return None
+            
         except Exception as e:
             self.logger.error(f"Analysis error: {str(e)}")
-            return {
-                "sections": [],
-                "program_personality": {
-                    "tone": "Error in analysis",
-                    "emphasis": "",
-                    "distinctive": ""
-                },
-                "fit_indicators": []
-            }
+            return None
 
-    def prepare_vectors(self, analysis: Dict) -> List[Dict]:
-        chunks = []
-        
+    def prepare_nodes(self, analysis: Dict, document: Document) -> List[Document]:
+        if not analysis or "sections" not in analysis:
+            return []
+            
+        nodes = []
         for section in analysis['sections']:
-            chunk = {
-                "content": section['text'],
-                "metadata": {
-                    "url": analysis['url'],
-                    "section_type": section['type'],
+            # Create Document for each section with rich metadata
+            node = Document(
+                text=section['text'],
+                metadata={
+                    "type": section['type'],
                     "context": section['context'],
-                    "advisor_notes": section['advisor_notes']
+                    "advisor_notes": section['advisor_notes'],
+                    "url": document.metadata.get("url", ""),
+                    "source": document.metadata
                 }
-            }
-            chunks.append(chunk)
-
-        return chunks
+            )
+            nodes.append(node)
+        return nodes
 
     def analyze(self):
         for page in self.pages_to_analyze:
             try:
-                self.logger.info(f"Analyzing {page['url']}")
+                url = page['url']
+                self.logger.info(f"Analyzing {url}")
                 
-                page_view = self.capture_page(page['url'])
-                analysis = self.analyze_page(page_view)
-                vectors = self.prepare_vectors(analysis)
+                document = self.capture_page(url)
+                if not document:
+                    continue
+                    
+                analysis = self.analyze_page(document)
+                if not analysis:
+                    continue
+                    
+                nodes = self.prepare_nodes(analysis, document)
                 
                 output = {
-                    "url": page['url'],
+                    "url": url,
                     "analysis": analysis,
-                    "vectors": vectors,
+                    "nodes": [
+                        {
+                            "text": node.text,
+                            "metadata": node.metadata
+                        } for node in nodes
+                    ],
                     "timestamp": datetime.now().isoformat()
                 }
                 
-                filename = f"{self.school}/analysis/{hashlib.md5(page['url'].encode()).hexdigest()}.json"
+                filename = f"{self.school}/analysis/{hashlib.md5(url.encode()).hexdigest()}.json"
                 with open(filename, 'w') as f:
                     json.dump(output, f, indent=2)
                     
+                time.sleep(1)  # Rate limiting
+                
             except Exception as e:
-                self.logger.error(f"Error analyzing {page['url']}: {str(e)}")
+                self.logger.error(f"Error processing {page['url']}: {str(e)}")
                 continue

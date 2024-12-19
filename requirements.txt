@@ -1,7 +1,12 @@
+# Core dependencies
 click==8.1.7
-openai==1.3.5
-playwright==1.40.0
-beautifulsoup4==4.12.2
 python-dotenv==1.0.0
-requests==2.31.0
-httpx>=0.24.1,<1.0.0
+
+# LlamaIndex ecosystem
+llama-index-core>=0.12.0
+llama-index-llms-openai>=0.3.0
+llama-index-readers-web>=0.3.0
+llama-index-embeddings-openai>=0.3.0
+
+# OpenAI dependency
+openai>=1.58.1

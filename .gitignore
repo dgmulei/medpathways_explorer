@@ -1,14 +1,33 @@
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
 .env
 .venv
 env/
 venv/
 ENV/
+
+# Logs
 *.log
-*.json
-dist/
-build/
-*.egg-info/
+
+# LlamaIndex storage and cache
+**/storage/
+**/index_storage/
+.llama_index/
+.cache/
+
+# Project files
+# Don't ignore configuration JSONs
+!**/config/*.json
+!**/settings/*.json
+
+# But ignore generated data
+UPenn/pages/*.json
+UPenn/analysis/*.json

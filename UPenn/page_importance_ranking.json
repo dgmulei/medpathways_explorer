@@ -1,0 +1,26 @@
+{
+  "ranking": [
+    {
+      "url": "https://www.med.upenn.edu/admissions/",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.8,
+      "related_topics": [],
+      "semantic_context": {
+        "related_pages": [],
+        "topic_clusters": [
+          "admissions",
+          "requirements"
+        ]
+      }
+    }
+  ],
+  "metadata": {
+    "total_pages": 1,
+    "exploration_timestamp": "2024-12-19T15:25:34.690445",
+    "base_domain": "www.med.upenn.edu",
+    "topic_overview": []
+  }
+}
