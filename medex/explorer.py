@@ -57,14 +57,12 @@ class Explorer:
         
     def fetch_pages(self) -> List[Document]:
         try:
-            # Load and process documents
-            # Load documents and ensure metadata is set
+            # Load documents with metadata
             documents = self.loader.load_data([self.start_url])
             for doc in documents:
                 if not doc.metadata:
                     doc.metadata = {}
                 doc.metadata["url"] = self.start_url
-                doc.metadata["title"] = "UPenn Medical School Admissions"
             self.logger.info(f"Loaded {len(documents)} documents")
             
             # Process documents into nodes
@@ -89,12 +87,65 @@ class Explorer:
         
         try:
             # Create analysis prompt
-            prompt = f"""Analyze this medical school webpage content and return a JSON object with:
-            - importance_score (0-1)
-            - explorer_tags (list of relevant tags)
-            - abstract (100-word summary)
-            - recommended_links (list of objects with url and priority)
-            - related_topics (list of topics found in content)
+            prompt = f"""You are analyzing a medical school webpage to discover ALL possible navigation paths. Your task is to understand the content and identify every possible linked page or resource.
+
+            CRITICAL: Look for ANY references to other pages or content, including:
+            1. Direct Links:
+               - Full URLs (http:// or https://)
+               - Relative paths (/admissions/requirements.html)
+               - Email addresses (convert to mailto: URLs)
+               
+            2. Implicit Page References:
+               - "Visit our X page"
+               - "See the X section"
+               - "View X details"
+               - "Information about X"
+               - "Learn more about X"
+               
+            3. Content References:
+               - Named sections or pages ("Entering Class Profile")
+               - Resource mentions ("MSAR guide")
+               - Form references ("secondary application")
+               - Portal mentions ("AMCAS")
+               
+            4. Navigation Elements:
+               - Section headers
+               - Menu items
+               - Footer links
+               - Resource links
+               
+            5. Special Content:
+               - PDF documents
+               - Application forms
+               - Program guides
+               - Information packets
+            
+            Return a JSON object with:
+            - importance_score (0-1): Score based on relevance to pre-med students
+            - explorer_tags (list): Relevant tags like admissions, curriculum, requirements
+            - abstract (string): 100-word summary focused on key information
+            - recommended_links (list): Array of objects with {{
+                "url": "full URL or path",
+                "priority": 0-1 score,
+                "text": "exact text that referenced this link",
+                "context": "full sentence or section containing the reference",
+                "type": "navigation|content|resource|application|faculty"
+            }}
+            - related_topics (list): Key topics and themes found in content
+
+            For any paths or references, construct full URLs using base domain: {self.base_domain}
+
+            Examples:
+            1. Text: "View the Entering Class Profile for details"
+               Link: "https://www.med.upenn.edu/admissions/entering-class-profile.html"
+               
+            2. Text: "Information Sessions are available on our Prospective Student Resources page"
+               Link: "https://www.med.upenn.edu/admissions/prospective-student-resources.html"
+               
+            3. Text: "Submit your AMCAS application"
+               Link: "https://www.med.upenn.edu/admissions/how-to-apply.html"
+
+            BE AGGRESSIVE in identifying potential links - if there's any mention of other content or pages, include it as a recommended link.
 
             Content to analyze:
             {document.text[:2000]}
@@ -199,34 +250,78 @@ class Explorer:
                 }
             }, f, indent=2)
 
+    def is_valid_url(self, url: str) -> bool:
+        """Check if URL is within the medical school domain"""
+        try:
+            parsed = urlparse(url)
+            return self.base_domain in parsed.netloc
+        except:
+            return False
+
     def explore(self):
         self.logger.info(f"Starting exploration from: {self.start_url}")
         
-        # Fetch and process all pages using LlamaIndex
-        pages = self.fetch_pages()
-        self.logger.info(f"Found {len(pages)} pages")
+        # Initialize URL tracking
+        urls_to_visit = {self.start_url}
+        visited_urls = set()
         
-        # Analyze each page
-        for document in pages:
-            url = document.metadata.get('url', '')
-            title = document.metadata.get('title', '')
-            self.logger.info(f"Analyzing: {url}")
+        while urls_to_visit and len(visited_urls) < self.MAX_PAGES:
+            current_url = urls_to_visit.pop()
+            if current_url in visited_urls:
+                continue
+                
+            self.logger.info(f"Processing: {current_url}")
+            visited_urls.add(current_url)
             
-            # Use vector index for semantic analysis
-            query_engine = self.index.as_query_engine(
-                verbose=True
+            # Fetch and process page
+            documents = self.loader.load_data([current_url])
+            if not documents:
+                continue
+                
+            document = documents[0]
+            if not document.metadata:
+                document.metadata = {}
+            document.metadata["url"] = current_url
+            
+            # Process document into nodes
+            nodes = self.node_parser.get_nodes_from_documents([document])
+            
+            # Update vector index
+            self.index = VectorStoreIndex(
+                nodes,
+                storage_context=self.storage_context
             )
             
-            # Get related content for better context
-            related_content = query_engine.query(
-                f"What are the key topics and requirements discussed in this medical school admissions page?"
-            )
-            
-            # Analyze with additional context
+            # Analyze page
             analysis = self.analyze_page(document)
             
             if analysis["importance_score"] > 0.3:
-                self.save_page(url, document, analysis)
+                self.save_page(current_url, document, analysis)
                 
+                # Add new URLs to visit from analysis
+                for link in analysis.get("recommended_links", []):
+                    if isinstance(link, dict):
+                        url = link.get("url", "")
+                        priority = link.get("priority", 0)
+                        link_type = link.get("type", "")
+                        # Prioritize navigation and content links
+                        if (url and priority > 0.3 and 
+                            self.is_valid_url(url) and
+                            link_type in ["navigation", "content", "application"]):
+                            urls_to_visit.add(url)
+                    elif isinstance(link, str) and self.is_valid_url(link):
+                        urls_to_visit.add(link)
+            
+            # Log discovered links
+            links = analysis.get("recommended_links", [])
+            self.logger.info(f"Found {len(links)} links in {current_url}")
+            for link in links[:5]:  # Log first 5 links
+                if isinstance(link, dict):
+                    self.logger.info(f"Link: {link.get('url', '')} - {link.get('text', '')[:50]}")
+            
+            # Persist storage periodically
+            if len(visited_urls) % 5 == 0:
+                self.index.storage_context.persist(persist_dir=self.storage_dir)
+        
         self.save_importance_ranking()
-        self.logger.info(f"Exploration complete. {len(pages)} pages analyzed.")
+        self.logger.info(f"Exploration complete. {len(visited_urls)} pages analyzed.")
