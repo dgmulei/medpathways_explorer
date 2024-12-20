@@ -87,63 +87,49 @@ class Explorer:
         
         try:
             # Create analysis prompt
-            prompt = f"""You are analyzing a medical school webpage to discover ALL possible navigation paths. Your task is to understand the content and identify every possible linked page or resource.
+            prompt = f"""You are an experienced pre-med advisor analyzing a medical school webpage. Your task is to discover ALL content paths valuable to pre-med students by thinking like an advisor who has reviewed hundreds of medical school websites.
 
-            CRITICAL: Look for ANY references to other pages or content, including:
-            1. Direct Links:
-               - Full URLs (http:// or https://)
-               - Relative paths (/admissions/requirements.html)
-               - Email addresses (convert to mailto: URLs)
-               
-            2. Implicit Page References:
-               - "Visit our X page"
-               - "See the X section"
-               - "View X details"
-               - "Information about X"
-               - "Learn more about X"
-               
-            3. Content References:
-               - Named sections or pages ("Entering Class Profile")
-               - Resource mentions ("MSAR guide")
-               - Form references ("secondary application")
-               - Portal mentions ("AMCAS")
-               
-            4. Navigation Elements:
-               - Section headers
-               - Menu items
-               - Footer links
-               - Resource links
-               
-            5. Special Content:
-               - PDF documents
-               - Application forms
-               - Program guides
-               - Information packets
+CRITICAL: Discover ALL possible navigation paths. Your task is to understand the content and identify every possible linked page or resource. BE AGGRESSIVE in identifying potential links - if there's any mention of other content or pages, include it as a recommended link.
             
-            Return a JSON object with:
-            - importance_score (0-1): Score based on relevance to pre-med students
-            - explorer_tags (list): Relevant tags like admissions, curriculum, requirements
-            - abstract (string): 100-word summary focused on key information
-            - recommended_links (list): Array of objects with {{
-                "url": "full URL or path",
-                "priority": 0-1 score,
-                "text": "exact text that referenced this link",
-                "context": "full sentence or section containing the reference",
-                "type": "navigation|content|resource|application|faculty"
-            }}
-            - related_topics (list): Key topics and themes found in content
+CONTENT PRIORITIES:
+1. Core Pre-med Information:
+   - Admissions requirements and competencies
+   - Application processes and deadlines
+   - Curriculum structure and unique features
+   - Financial information and opportunities
+   - Student support and resources
+   - Program culture and values
 
-            For any paths or references, construct full URLs using base domain: {self.base_domain}
+2. Navigation Recognition:
+   - Main navigation menus
+   - Section headers and submenus
+   - Related content references
+   - Resource collections
+   - Application portals and tools
 
-            Examples:
-            1. Text: "View the Entering Class Profile for details"
-               Link: "https://www.med.upenn.edu/admissions/entering-class-profile.html"
-               
-            2. Text: "Information Sessions are available on our Prospective Student Resources page"
-               Link: "https://www.med.upenn.edu/admissions/prospective-student-resources.html"
-               
-            3. Text: "Submit your AMCAS application"
-               Link: "https://www.med.upenn.edu/admissions/how-to-apply.html"
+3. Link Discovery Patterns:
+   - Direct menu/navigation links
+   - In-content references ("learn more about X")
+   - Related resource mentions
+   - Important document links (PDFs, guides)
+   - Contact points and portals
+
+4. Content Value Signals:
+   - Direct applicant guidance
+   - Program requirements
+   - Application instructions
+   - Student support information
+   - Unique program features
+   - Decision-critical content
+
+Return a JSON object with:
+- importance_score (0-1): Based on pre-med student relevance
+- explorer_tags: Categories like ["admissions", "requirements", "curriculum"]
+- abstract: 100-word summary of key information
+- recommended_links: Array of discovered content paths with priority scores
+- related_topics: Key themes and connections
+
+Think like an advisor guiding students through ANY medical school's content, identifying valuable information regardless of how it's structured or presented.
 
             BE AGGRESSIVE in identifying potential links - if there's any mention of other content or pages, include it as a recommended link.
 
@@ -251,10 +237,17 @@ class Explorer:
             }, f, indent=2)
 
     def is_valid_url(self, url: str) -> bool:
-        """Check if URL is within the medical school domain"""
+        """Check if URL is nested under the starting URL path"""
         try:
             parsed = urlparse(url)
-            return self.base_domain in parsed.netloc
+            start_parsed = urlparse(self.start_url)
+            # Must be same domain
+            if self.base_domain != parsed.netloc:
+                return False
+            # URL path must start with the starting URL's path
+            if not parsed.path.startswith(start_parsed.path):
+                return False
+            return True
         except:
             return False
 

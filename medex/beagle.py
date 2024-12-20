@@ -77,31 +77,84 @@ class Beagle:
             )
             
             # Create analysis prompt
-            prompt = f"""You are analyzing {self.school}'s medical school webpage.
-            Consider both content and presentation to provide insights for pre-med students.
-            
-            You must respond with a valid JSON object using this exact structure, with no additional text or explanation:
-            {{
-                "sections": [
-                    {{
-                        "text": "exact content from page",
-                        "type": "content category",
-                        "context": "presentation details",
-                        "advisor_notes": "insights for students"
-                    }}
-                ],
-                "program_personality": {{
-                    "tone": "content style",
-                    "emphasis": "key priorities",
-                    "distinctive": "unique features"
-                }},
-                "fit_indicators": [
-                    "student fit factors"
-                ]
-            }}
+            prompt = f"""You are a pre-med advisor analyzing medical school program content. Your task is to extract and structure the content following these rules:
 
-            Content to analyze:
-            {document.text[:2000]}
+CONTENT ANALYSIS:
+1. Find and preserve ALL content from:
+  - <article class="content main">
+  - <section class="grid"> and <section class="unit">
+  - <!--content area--> comments
+  - Tables and structured lists
+  - Nested content hierarchies
+  Exclude only: navigation, headers/footers, UI elements
+
+2. Mark structure with:
+  #SECTION# Section headers
+  #LIST# List items 
+  #TABLE# Table data
+  #NOTE# Special content
+
+3. Clean while maintaining markers:
+  - Strip HTML but keep markers
+  - Normalize spacing/breaks
+  - Preserve hierarchical relationships
+
+PAGE VALIDATION:
+First check if page is valid:
+1. Check <title> and <h2> for "Page Not Found"
+2. Look for error messages in content area
+3. Verify presence of actual content in main article
+DO NOT PROCEED with analysis if page is 404/error.
+
+CONTENT CHUNKING RULES:
+1. Page Size Detection:
+   - Check content length before processing
+   - If > 6000 tokens, split into logical sections
+   - Process each section independently
+   - Merge results maintaining JSON structure
+
+2. Section Boundaries:
+   - Split at major headers (h2)
+   - Keep related content together
+   - Maintain context between chunks
+   - Preserve data point relationships
+
+3. Content Priority:
+   - Process critical sections first
+   - Include key headers in each chunk
+   - Ensure requirements span chunks
+   - Track cross-references
+
+JSON SAFETY RULES:
+1. Text Content:
+   - Maximum 1000 characters per section
+   - Split longer content into multiple sections
+   - Escape special characters
+   - Remove HTML tags
+
+2. Data Points:
+   - Keep arrays and values concise
+   - Use simple string formats
+   - No nested objects
+   - Escape special characters
+
+3. Output Format:
+   {{
+     "sections": [
+       {{
+         "text": "content here (max 1000 chars)",
+         "type": "category name",
+         "context": "brief context"
+       }}
+     ],
+     "program_info": {{
+       "key_points": ["point1", "point2"],
+       "requirements": ["req1", "req2"]
+     }}
+   }}
+
+Content to analyze:
+{document.text[:2000]}
             """
             
             # Use query engine for analysis
