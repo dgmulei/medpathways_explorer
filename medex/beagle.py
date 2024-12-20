@@ -71,8 +71,15 @@ class Beagle:
 
     def analyze_page(self, document: Document) -> Optional[Dict]:
         try:
+            # Check and limit content length
+            content = document.text
+            estimated_tokens = len(content) / 4
+            if estimated_tokens > 6000:
+                self.logger.info(f"Large content detected ({estimated_tokens:.0f} estimated tokens). Limiting to ~6000 tokens.")
+                content = content[:24000]  # 24000 chars ≈ 6000 tokens
+            
             # Use LlamaIndex's query engine for content analysis
-            query_engine = VectorStoreIndex([document]).as_query_engine(
+            query_engine = VectorStoreIndex([Document(text=content)]).as_query_engine(
                 verbose=True
             )
             
@@ -80,31 +87,34 @@ class Beagle:
             prompt = f"""You are a pre-med advisor analyzing medical school program content. Your task is to extract and structure the content following these rules:
 
 CONTENT ANALYSIS:
-1. Find and preserve ALL content from:
-  - <article class="content main">
-  - <section class="grid"> and <section class="unit">
-  - <!--content area--> comments
-  - Tables and structured lists
-  - Nested content hierarchies
-  Exclude only: navigation, headers/footers, UI elements
+1. Find and preserve ALL valuable content including:
+  - Main content sections
+  - Important program information
+  - Requirements and prerequisites
+  - Application details
+  - Program descriptions
+  - Student resources
+  Exclude only: navigational elements and boilerplate text
 
-2. Mark structure with:
-  #SECTION# Section headers
-  #LIST# List items 
-  #TABLE# Table data
-  #NOTE# Special content
+2. Identify and mark key content types:
+  - Section headers and titles
+  - Lists of requirements or steps
+  - Important data points
+  - Special notes or callouts
+  - Program-specific details
 
-3. Clean while maintaining markers:
-  - Strip HTML but keep markers
-  - Normalize spacing/breaks
-  - Preserve hierarchical relationships
+3. Content organization rules:
+  - Maintain logical content grouping
+  - Preserve content hierarchy
+  - Keep related information together
+  - Retain contextual relationships
 
 PAGE VALIDATION:
-First check if page is valid:
-1. Check <title> and <h2> for "Page Not Found"
-2. Look for error messages in content area
-3. Verify presence of actual content in main article
-DO NOT PROCEED with analysis if page is 404/error.
+First check if page content is valid:
+1. Look for error messages or "Page Not Found" indicators
+2. Verify presence of meaningful content
+3. Check for content relevance to medical education
+DO NOT PROCEED with analysis if page appears invalid.
 
 CONTENT CHUNKING RULES:
 1. Page Size Detection:
@@ -114,23 +124,23 @@ CONTENT CHUNKING RULES:
    - Merge results maintaining JSON structure
 
 2. Section Boundaries:
-   - Split at major headers (h2)
+   - Split at major topic transitions
    - Keep related content together
    - Maintain context between chunks
-   - Preserve data point relationships
+   - Preserve information relationships
 
 3. Content Priority:
-   - Process critical sections first
-   - Include key headers in each chunk
-   - Ensure requirements span chunks
-   - Track cross-references
+   - Process critical program information first
+   - Maintain section context
+   - Ensure requirements are complete
+   - Track related information
 
-JSON SAFETY RULES:
+JSON OUTPUT RULES:
 1. Text Content:
    - Maximum 1000 characters per section
    - Split longer content into multiple sections
    - Escape special characters
-   - Remove HTML tags
+   - Clean and normalize text
 
 2. Data Points:
    - Keep arrays and values concise
@@ -138,7 +148,7 @@ JSON SAFETY RULES:
    - No nested objects
    - Escape special characters
 
-3. Output Format:
+3. Output Format (REQUIRED - return ONLY this JSON structure with no additional text):
    {{
      "sections": [
        {{
@@ -179,14 +189,26 @@ Content to analyze:
                             # Remove any trailing ```
                             response_text = response_text.split("```")[0]
                     
-                    # Try to parse as JSON
-                    return json.loads(response_text.strip())
+                    try:
+                        # Try to parse as JSON
+                        result = json.loads(response_text.strip())
+                        # Validate expected structure
+                        if "sections" not in result:
+                            self.logger.error("Missing required 'sections' in response")
+                            self.logger.error(f"Full response: {response_text}")
+                            return None
+                        return result
+                    except json.JSONDecodeError as e:
+                        self.logger.error(f"JSON parse error at position {e.pos}: {str(e)}")
+                        self.logger.error(f"Error context: {response_text[max(0, e.pos-50):min(len(response_text), e.pos+50)]}")
+                        self.logger.error(f"Full response: {response_text}")
+                        return None
                 else:
                     self.logger.error("Empty response received")
                     return None
-            except json.JSONDecodeError as e:
-                self.logger.error(f"Failed to parse JSON response: {str(e)}")
-                self.logger.error(f"Response text: {response_text[:200]}...")
+            except Exception as e:
+                self.logger.error(f"Error processing response: {str(e)}")
+                self.logger.error(f"Full response: {response_text}")
                 return None
             
         except Exception as e:
@@ -205,7 +227,7 @@ Content to analyze:
                 metadata={
                     "type": section['type'],
                     "context": section['context'],
-                    "advisor_notes": section['advisor_notes'],
+                    "advisor_notes": section.get('advisor_notes', ''),
                     "url": document.metadata.get("url", ""),
                     "source": document.metadata
                 }

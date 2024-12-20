@@ -5,7 +5,8 @@ from llama_index.core.storage import StorageContext
 from llama_index.core.indices.vector_store import VectorStoreIndex
 from llama_index.core.callbacks import CallbackManager, LlamaDebugHandler
 from llama_index.llms.openai import OpenAI
-from llama_index.readers.web import SimpleWebPageReader
+from llama_index.readers.web import AsyncWebPageReader
+import asyncio
 from typing import Dict, List, Optional
 from urllib.parse import urlparse
 import json
@@ -39,8 +40,13 @@ class Explorer:
         
         self.MAX_PAGES = 500
         
-        # LlamaIndex setup for web page reading
-        self.loader = SimpleWebPageReader()
+        # LlamaIndex setup for web page reading with async support
+        self.loader = AsyncWebPageReader(
+            html_to_text=True,  # Convert HTML to clean text for better parsing
+            limit=5,  # Limit concurrent requests to be respectful
+            dedupe=True,  # Remove duplicate URLs
+            fail_on_error=False  # Continue on errors to be resilient
+        )
         
         # Setup node parser with default configuration
         self.node_parser = SentenceSplitter(chunk_size=1024, chunk_overlap=20)
@@ -57,8 +63,8 @@ class Explorer:
         
     def fetch_pages(self) -> List[Document]:
         try:
-            # Load documents with metadata
-            documents = self.loader.load_data([self.start_url])
+            # Load documents with async support
+            documents = asyncio.run(self.loader.aload_data(urls=[self.start_url]))
             for doc in documents:
                 if not doc.metadata:
                     doc.metadata = {}
@@ -87,9 +93,25 @@ class Explorer:
         
         try:
             # Create analysis prompt
+            # Log the raw content for debugging
+            self.logger.info(f"Raw content length: {len(document.text)}")
+            self.logger.info(f"Content sample: {document.text[:500]}")
+            
             prompt = f"""You are an experienced pre-med advisor analyzing a medical school webpage. Your task is to discover ALL content paths valuable to pre-med students by thinking like an advisor who has reviewed hundreds of medical school websites.
 
-CRITICAL: Discover ALL possible navigation paths. Your task is to understand the content and identify every possible linked page or resource. BE AGGRESSIVE in identifying potential links - if there's any mention of other content or pages, include it as a recommended link.
+CRITICAL: Your primary task is to discover ALL possible navigation paths and content references. You must:
+1. Identify explicit links in the content (URLs, paths)
+2. Recognize implicit references to other pages
+3. Understand the navigation structure
+4. Find mentions of related content
+
+BE EXTREMELY THOROUGH in link discovery:
+- Look for navigation menu items (e.g., "Admissions", "Requirements")
+- Find section references (e.g., "Visit our Requirements page")
+- Identify related content mentions (e.g., "Learn more about our curriculum")
+- Spot application portal links (e.g., "Apply Now", "Submit Application")
+- Detect resource download links (e.g., "Download PDF", "View Guide")
+- Notice program requirement pages (e.g., "Prerequisites", "MCAT Requirements")
             
 CONTENT PRIORITIES:
 1. Core Pre-med Information:
@@ -122,37 +144,89 @@ CONTENT PRIORITIES:
    - Unique program features
    - Decision-critical content
 
-Return a JSON object with:
-- importance_score (0-1): Based on pre-med student relevance
-- explorer_tags: Categories like ["admissions", "requirements", "curriculum"]
-- abstract: 100-word summary of key information
-- recommended_links: Array of discovered content paths with priority scores
-- related_topics: Key themes and connections
+Return a JSON object with these EXACT keys and format (no additional text):
+{{
+    "importance_score": 0.9,
+    "explorer_tags": ["admissions", "requirements"],
+    "abstract": "Brief summary of the page content",
+    "recommended_links": [
+        {{
+            "url": "/admissions/requirements.html",
+            "text": "Admissions Requirements",
+            "type": "navigation",
+            "priority": 0.9,
+            "source": "Main Navigation Menu",
+            "confidence": 1.0
+        }}
+    ],
+    "related_topics": ["admissions process", "requirements"]
+}}
 
-Think like an advisor guiding students through ANY medical school's content, identifying valuable information regardless of how it's structured or presented.
+IMPORTANT: Follow this EXACT format. Do not include any explanatory text in the JSON.
 
-            BE AGGRESSIVE in identifying potential links - if there's any mention of other content or pages, include it as a recommended link.
+For each section of content, analyze it like an advisor would:
+1. Look for explicit URLs or paths (e.g., "/admissions/requirements")
+2. Identify navigation elements (e.g., menu items, breadcrumbs)
+3. Find content references (e.g., "See our curriculum guide")
+4. Note resources (e.g., "Download application checklist")
+5. Consider student navigation needs (e.g., "What would they click next?")
 
-            Content to analyze:
-            {document.text[:2000]}
+BE AGGRESSIVE in identifying potential links - if there's any mention of other content or pages, include it as a recommended link.
+
+Content to analyze:
+{document.text[:2000]}
             """
+            
+            # Extract and process links from raw content
+            import re
+            from urllib.parse import urljoin
+            
+            # Get base URL from current URL
+            base_url = '/'.join(self.start_url.split('/')[:-1]) + '/'
+            
+            # Extract markdown-style links
+            raw_links = re.findall(r'\[(.*?)\]\((.*?)\)', document.text)
+            extracted_links = []
+            
+            for link_text, link_url in raw_links:
+                if link_url.endswith('.html'):  # Only include HTML pages
+                    # Clean up link text and make URL absolute
+                    text = link_text.replace('__', '').strip()
+                    url = urljoin(base_url, link_url)
+                    
+                    extracted_links.append({
+                        "url": url,
+                        "text": text,
+                        "type": "navigation",
+                        "priority": 0.8,
+                        "source": "Navigation Menu",
+                        "confidence": 1.0
+                    })
+            
+            # Log extracted links for debugging
+            self.logger.info(f"Extracted {len(extracted_links)} raw links")
+            for link in extracted_links[:5]:
+                self.logger.info(f"Raw link: {link}")
             
             # Use query engine for analysis
             response = self.index.as_query_engine(
                 verbose=True
             ).query(prompt)
             
-            # Parse response into expected format
             try:
                 # Try to parse as JSON first
                 result = json.loads(str(response))
+                # Add extracted links to the recommended_links
+                if "recommended_links" not in result:
+                    result["recommended_links"] = []
+                result["recommended_links"].extend(extracted_links)
             except json.JSONDecodeError:
                 # If not valid JSON, create structured response
                 result = {
                     "importance_score": 0.8,  # Default high for admissions page
                     "explorer_tags": ["admissions", "requirements"],
                     "abstract": str(response)[:100],  # Use first 100 chars as abstract
-                    "recommended_links": [],
+                    "recommended_links": extracted_links,  # Use extracted links
                     "related_topics": []
                 }
             
@@ -266,12 +340,20 @@ Think like an advisor guiding students through ANY medical school's content, ide
             self.logger.info(f"Processing: {current_url}")
             visited_urls.add(current_url)
             
-            # Fetch and process page
-            documents = self.loader.load_data([current_url])
+            # Fetch and process page with async support
+            documents = asyncio.run(self.loader.aload_data(urls=[current_url]))
             if not documents:
                 continue
                 
+            # Use the first document as the main page
             document = documents[0]
+            
+            # Collect all unique links from all documents
+            all_links = set()
+            for doc in documents:
+                if doc.metadata and "links" in doc.metadata:
+                    all_links.update(doc.metadata["links"])
+            document.metadata["links"] = list(all_links)
             if not document.metadata:
                 document.metadata = {}
             document.metadata["url"] = current_url

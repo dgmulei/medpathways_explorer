@@ -6,21 +6,551 @@
         "admissions",
         "requirements"
       ],
-      "importance_score": 0.8,
-      "related_topics": [],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
       "semantic_context": {
-        "related_pages": [],
-        "topic_clusters": [
-          "admissions",
+        "related_pages": [
+          "admissions process",
           "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/applications-timeline.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/student-resources.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/core-1.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/entering-class-profile.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/search-results.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/financial-aid.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "financial aid",
+        "curriculum structure"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "curriculum structure"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/dual-degrees.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements",
+        "financial aid",
+        "curriculum structure"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements",
+          "curriculum structure"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/index.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/aamc.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/eval-degree-requirements.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/tuition-fees.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "tuition",
+        "financial aid",
+        "curriculum",
+        "application process"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "curriculum"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/core-3.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "curriculum structure",
+        "financial aid"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "curriculum structure"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/core-2.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/special-programs.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/covid-19-policies.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/teaching-facilities.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/impact-curriculum.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/post-graduate-outcomes.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/technical-standards.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/applications-procedures.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/training-enhancements.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/special-study-research.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "curriculum structure",
+        "financial aid opportunities",
+        "special programs"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "curriculum structure"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
+        ]
+      }
+    },
+    {
+      "url": "https://www.med.upenn.edu/admissions/admissions.html",
+      "explorer_tags": [
+        "admissions",
+        "requirements"
+      ],
+      "importance_score": 0.9,
+      "related_topics": [
+        "admissions process",
+        "requirements"
+      ],
+      "semantic_context": {
+        "related_pages": [
+          "admissions process",
+          "requirements"
+        ],
+        "topic_clusters": [
+          "requirements",
+          "admissions"
         ]
       }
     }
   ],
   "metadata": {
-    "total_pages": 1,
-    "exploration_timestamp": "2024-12-19T21:35:56.575248",
+    "total_pages": 24,
+    "exploration_timestamp": "2024-12-20T00:20:50.810059",
     "base_domain": "www.med.upenn.edu",
-    "topic_overview": []
+    "topic_overview": [
+      "tuition",
+      "requirements",
+      "curriculum structure",
+      "financial aid opportunities",
+      "admissions process",
+      "application process",
+      "special programs",
+      "financial aid",
+      "curriculum"
+    ]
   }
 }
